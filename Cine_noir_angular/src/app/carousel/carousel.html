@@ -1,0 +1,72 @@
+<section id="hero" class="hc-hero" tabindex="0" (keydown)="onKey($event)" (touchstart)="onTouchStart($event)"
+    (touchend)="onTouchEnd($event)">
+
+    <div id="hcSlides">
+        @for (s of slides; track $index; let i = $index) {
+        <article class="hc-slide" [class.is-active]="i === current()"
+            [attr.aria-label]="(i + 1) + ' de ' + slides.length">
+            <div class="hc-bg" [style.background-image]="'url(' + s.thumb + ')'"></div>
+
+            @if (i === current() && frameVisible() && !modalUrl()) {
+            <iframe #bgFrame class="hc-iframe" [class.is-ready]="ready()" title="Tráiler de fondo"
+                allow="autoplay; encrypted-media; picture-in-picture" tabindex="-1" [src]="s.bgUrl"
+                (load)="onFrameLoad()"></iframe>
+            }
+
+            <div class="hc-shade"></div>
+            <div class="hc-content">
+                <p class="hc-meta">
+                    @for (t of s.meta; track t) { <span>{{ t }}</span> }
+                </p>
+                <h1 class="hc-title">{{ s.title }}</h1>
+                <p class="hc-desc">{{ s.description }}</p>
+                <div class="hc-actions">
+                    <button class="hc-btn hc-btn-primary" type="button" (click)="openTrailer(s)">
+                        <span aria-hidden="true">&#9654;</span> Comenzar a ver
+                    </button>
+                    @if (s.ticketId != null) {
+                    <a class="hc-btn hc-btn-ghost" href="#taquilla" (click)="onComprar(s)">Comprar boletos</a>
+                    }
+                </div>
+            </div>
+        </article>
+        }
+    </div>
+
+    <button id="hcPrev" class="hc-arrow hc-arrow-prev" type="button" (click)="prev()"
+        aria-label="Anterior">&#10094;</button>
+    <button id="hcNext" class="hc-arrow hc-arrow-next" type="button" (click)="next()"
+        aria-label="Siguiente">&#10095;</button>
+
+    <div id="hcDots" class="hc-dots" role="tablist">
+        @for (s of slides; track $index; let i = $index) {
+        <button class="hc-dot" type="button" role="tab" [attr.aria-label]="s.title" [class.is-active]="i === current()"
+            [class.is-done]="i < current()" [attr.aria-selected]="i === current()" (click)="show(i)">
+            <span class="hc-dot-bar">
+                <span class="hc-dot-fill" [style.width.%]="i === current() ? progress() * 100 : null"></span>
+            </span>
+        </button>
+        }
+    </div>
+
+    <button id="hcSound" class="hc-sound" type="button" [class.is-pending]="soundOn() && !unlocked()"
+        [attr.aria-pressed]="soundOn()" (click)="toggleSound()" (pointerdown)="$event.stopPropagation()"
+        (pointerup)="$event.stopPropagation()" (keydown)="$event.stopPropagation()"
+        (touchend)="$event.stopPropagation()">
+        <span id="hcSoundIcon">{{ playing() ? '🔊' : '🔇' }}</span>
+        <span id="hcSoundText">{{ soundText() }}</span>
+    </button>
+
+    <div id="hcModal" class="hc-modal" [hidden]="!modalUrl()">
+        <div class="hc-modal-backdrop" (click)="closeTrailer()"></div>
+        <div class="hc-modal-box">
+            <button type="button" class="hc-modal-close" (click)="closeTrailer()" aria-label="Cerrar">&times;</button>
+            <div id="hcModalFrame" class="hc-modal-frame">
+                @if (modalUrl(); as url) {
+                <iframe [title]="modalTitle()" [src]="url"
+                    allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>
+                }
+            </div>
+        </div>
+    </div>
+</section>

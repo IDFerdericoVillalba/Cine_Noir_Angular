@@ -1,0 +1,55 @@
+<header class="site-header">
+    <div class="container header-container">
+        <a href="#hero" class="site-logo" (click)="go('#hero')">
+            <span>CINEMA</span><span class="logo-dot"></span><span>NOIR</span>
+        </a>
+
+        <nav class="site-nav" id="siteNav" aria-label="Principal" [class.is-open]="menuOpen()">
+            <ul class="nav-menu">
+                @for (l of links; track l.href) {
+                <li>
+                    <a [href]="l.href" class="nav-item-link" [class.active]="active() === l.href"
+                        (click)="go(l.href)">{{ l.label }}</a>
+                </li>
+                }
+            </ul>
+
+            <!-- Solo se ven en el menú desplegable del celular -->
+            <div class="nav-mobile-actions">
+                <a href="#taquilla" class="btn-cta" (click)="go('#taquilla')"><span>🎟️</span> Comprar boletos</a>
+                <button type="button" class="btn-admin" (click)="openAdmin()">⚙️ Admin &amp; BD</button>
+            </div>
+        </nav>
+
+        <div class="header-actions">
+            <button id="themeToggle" class="theme-toggle" type="button" aria-label="Cambiar entre modo claro y oscuro"
+                [attr.aria-pressed]="dark()" (click)="toggleTheme()">
+                <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+                </svg>
+                <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="4" />
+                    <path
+                        d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+                </svg>
+            </button>
+
+            <button type="button" class="btn-admin" (click)="openAdmin()" aria-label="Admin y base de datos"
+                title="Admin y base de datos">
+                <span aria-hidden="true">⚙️</span><span class="btn-admin-text">Admin &amp; BD</span>
+            </button>
+
+            <a href="#taquilla" class="btn-cta" (click)="go('#taquilla')">
+                <span>🎟️</span> Comprar boletos
+            </a>
+
+            <button id="navBurger" class="nav-burger" type="button" [class.is-open]="menuOpen()"
+                [attr.aria-label]="menuOpen() ? 'Cerrar menú' : 'Abrir menú'" [attr.aria-expanded]="menuOpen()"
+                aria-controls="siteNav" (click)="toggleMenu()">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </div>
+</header>
