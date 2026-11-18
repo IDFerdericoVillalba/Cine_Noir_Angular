@@ -30,12 +30,10 @@ export class Taquilla {
   readonly filas = ['A', 'B', 'C', 'D', 'E', 'F'];
   readonly porFila = 10;
   readonly metodos: { id: Metodo; nombre: string; sub: string; ico: string; clase: string }[] = [
-    { id: 'tarjeta', nombre: 'Tarjeta', sub: 'Crédito / Débito', ico: '���', clase: '' },
-    { id: 'pse', nombre: 'PSE', sub: 'Débito bancario', ico: 'PSE', clase: 'pay-ico-text pse' },
+    { id: 'tarjeta', nombre: 'Tarjeta', sub: 'Crédito / Débito', ico: '💳', clase: '' }, { id: 'pse', nombre: 'PSE', sub: 'Débito bancario', ico: 'PSE', clase: 'pay-ico-text pse' },
     { id: 'nequi', nombre: 'Nequi', sub: 'Desde tu celular', ico: 'N', clase: 'pay-ico-text nequi' },
     { id: 'daviplata', nombre: 'Daviplata', sub: 'Desde tu celular', ico: 'D', clase: 'pay-ico-text davi' },
-    { id: 'efectivo', nombre: 'Efectivo', sub: 'Pagas en taquilla', ico: '���', clase: '' }
-  ];
+    { id: 'efectivo', nombre: 'Efectivo', sub: 'Pagas en taquilla', ico: '💵', clase: '' }];
   readonly bancos = [
     'Bancolombia', 'Davivienda', 'Banco de Bogotá', 'BBVA Colombia', 'Banco de Occidente',
     'Banco Popular', 'Scotiabank Colpatria', 'Banco Caja Social', 'Banco AV Villas', 'Nu Colombia'
@@ -201,8 +199,7 @@ export class Taquilla {
   etiquetaPagar(): string {
     const total = this.estado.totales().total;
     const efectivo = this.metodo() === 'efectivo';
-    const ico = efectivo ? '���️' : '���';
-    if (total > 0) return `${ico} ${efectivo ? 'Reservar' : 'Pagar'} ${this.estado.formatCurrency(total)}`;
+    const ico = efectivo ? '🎟️' : '🔒'; if (total > 0) return `${ico} ${efectivo ? 'Reservar' : 'Pagar'} ${this.estado.formatCurrency(total)}`;
     return `${ico} ${efectivo ? 'Reservar y pagar en taquilla' : 'Confirmar y pagar'}`;
   }
 

@@ -10,10 +10,9 @@ import { Admin } from './admin/admin';
 import { Taquilla } from './taquilla/taquilla';
 import { Contacto } from './contacto/contacto';
 import { SiteFooter } from './site-footer/site-footer';
-import { ToastContainer } from './toast-container/toast-container';   // <-- nuevo import
+import { ToastContainer } from './toast-container/toast-container';
 import { Estado } from './services/estado';
 import { AdminEstado } from './services/admin';
-import { Toast } from './services/toast';
 
 @Component({
   selector: 'app-root',
@@ -30,7 +29,7 @@ import { Toast } from './services/toast';
     Taquilla,
     Contacto,
     SiteFooter,
-    ToastContainer            // <-- añade al array de imports
+    ToastContainer
   ],
   styleUrls: ['./app.css'],
   templateUrl: './app.html',
@@ -38,17 +37,15 @@ import { Toast } from './services/toast';
 export class App implements OnInit {
   protected readonly title = signal('Cine_noir_angular');
   protected readonly estado = inject(Estado);
-  protected readonly toast = inject(Toast);
   private readonly admin = inject(AdminEstado);
 
   ngOnInit(): void {
     this.estado.cargar();
   }
 
-  onComprar(): void {
-    // Puedes obtener datos del evento en el futuro.
-    // Por ahora solo usamos el método del servicio Toast como ejemplo:
-    this.toast.mostrar('Compra pulsada', 'info');
+  /** Se dispara desde el carrusel con el id de la película elegida. */
+  onComprar(idPelicula: number): void {
+    this.estado.comprarPelicula(idPelicula);
   }
 
   onAdmin(): void {
