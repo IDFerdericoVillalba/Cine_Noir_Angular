@@ -3,9 +3,11 @@ import { Component, HostListener, output, signal } from '@angular/core';
 const THEME_KEY = 'cineTheme';
 
 @Component({
+  standalone: true,
+  imports: [],
   selector: 'app-header',
   templateUrl: './header.html',
-  styleUrl: './header.css'
+  styleUrls: ['./header.css']
 })
 export class Header {
   /** Se emite al pulsar "Admin & BD". */

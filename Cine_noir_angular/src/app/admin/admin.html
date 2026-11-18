@@ -1,0 +1,272 @@
+<!-- PANEL PRINCIPAL -->
+<div class="modal-overlay" [class.active]="panel.tab() !== null">
+    @if (panel.tab(); as tab) {
+    <div class="modal-content-box" style="max-width: 900px;">
+        <div class="modal-head">
+            <h3 style="font-size: 1.25rem; font-weight: 900; text-transform: uppercase;">Panel de Administración &amp;
+                Base de Datos</h3>
+            <button type="button" class="adm-x" (click)="cerrar()" aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="modal-body-area">
+            <div class="adm-tabs">
+                @for (t of tabs; track t.id) {
+                <button type="button" class="format-pill-btn" [class.active]="tab === t.id"
+                    (click)="panel.tab.set(t.id)">{{ t.texto }}</button>
+                }
+            </div>
+
+            @switch (tab) {
+            @case ('peliculas') {
+            <div class="adm-head-row">
+                <h4>Catálogo de Películas</h4>
+                <button class="btn-cta adm-small" type="button" (click)="nuevaPelicula()">+ Nueva Película</button>
+            </div>
+            <div class="adm-scroll">
+                <table class="adm-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Título</th>
+                            <th>Género</th>
+                            <th>Duración</th>
+                            <th>Clasificación</th>
+                            <th class="adm-actions">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (p of estado.peliculas(); track p.id) {
+                        <tr>
+                            <td><strong>#{{ p.id }}</strong></td>
+                            <td><strong>{{ p.titulo }}</strong></td>
+                            <td>{{ p.genero }}</td>
+                            <td>{{ p.duracion }}</td>
+                            <td>{{ p.clasificacion }}</td>
+                            <td class="adm-actions">
+                                <button type="button" class="adm-btn" (click)="editarPelicula(p)">Editar</button>
+                                <button type="button" class="adm-btn adm-btn-del"
+                                    (click)="eliminarPelicula(p)">Eliminar</button>
+                            </td>
+                        </tr>
+                        } @empty {
+                        <tr>
+                            <td colspan="6" class="adm-vacio">No hay películas registradas.</td>
+                        </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            }
+
+            @case ('funciones') {
+            <div class="adm-head-row">
+                <h4>Programación de Horarios</h4>
+                <button class="btn-cta adm-small" type="button" (click)="nuevaFuncion()">+ Programar Función</button>
+            </div>
+            <div class="adm-scroll">
+                <table class="adm-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Película</th>
+                            <th>Fecha</th>
+                            <th>Hora</th>
+                            <th>Sala</th>
+                            <th>Precio</th>
+                            <th>Cupos</th>
+                            <th class="adm-actions">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (f of estado.funciones(); track f.id) {
+                        <tr>
+                            <td><strong>#{{ f.id }}</strong></td>
+                            <td><strong>{{ tituloDe(f.id_pelicula) }}</strong></td>
+                            <td>{{ f.fecha }}</td>
+                            <td>{{ f.hora }}</td>
+                            <td>{{ f.sala }}</td>
+                            <td class="adm-red">{{ estado.formatCurrency(f.precio) }}</td>
+                            <td><strong>{{ f.cupos_disponibles }}</strong></td>
+                            <td class="adm-actions">
+                                <button type="button" class="adm-btn" (click)="editarFuncion(f)">Editar</button>
+                                <button type="button" class="adm-btn adm-btn-del"
+                                    (click)="eliminarFuncion(f)">Eliminar</button>
+                            </td>
+                        </tr>
+                        } @empty {
+                        <tr>
+                            <td colspan="8" class="adm-vacio">No hay funciones programadas.</td>
+                        </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            }
+
+            @case ('compras') {
+            <div class="adm-head-row">
+                <h4>Historial de Compras Realizadas</h4>
+            </div>
+            <div class="adm-scroll">
+                <table class="adm-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Cliente</th>
+                            <th>Película &amp; Sala</th>
+                            <th>Boletos</th>
+                            <th>Total</th>
+                            <th>Pago</th>
+                            <th>Fecha Compra</th>
+                            <th class="adm-actions">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (c of compras(); track c.id) {
+                        <tr>
+                            <td><strong class="adm-red">#{{ c.id }}</strong></td>
+                            <td><strong>{{ c.nombre_cliente }}</strong></td>
+                            <td>
+                                {{ c.funcion?.pelicula?.titulo ?? 'N/A' }}
+                                <small class="adm-muted">({{ c.funcion?.sala ?? '-' }})</small>
+                            </td>
+                            <td>🎟️ {{ c.cantidad_boletos }}</td>
+                            <td><strong>{{ estado.formatCurrency(c.total_pago) }}</strong></td>
+                            <td class="adm-small-text">
+                                {{ c.metodo_pago ?? '—' }}
+                                <div class="adm-muted">{{ c.estado_pago ?? '' }}</div>
+                            </td>
+                            <td class="adm-small-text adm-muted">{{ c.fecha_compra }}</td>
+                            <td class="adm-actions">
+                                <button type="button" class="adm-btn" (click)="verTicket(c)">Ver Ticket</button>
+                                <button type="button" class="adm-btn adm-btn-del" (click)="anular(c)">Anular</button>
+                            </td>
+                        </tr>
+                        } @empty {
+                        <tr>
+                            <td colspan="8" class="adm-vacio">No hay compras registradas.</td>
+                        </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            }
+
+            @case ('sql') {
+            <div class="adm-head-row">
+                <h4>Script DDL &amp; DML</h4>
+                <button class="btn-cta adm-small" type="button" (click)="copiarSql()">Copiar SQL</button>
+            </div>
+            <pre class="adm-sql">{{ sql() }}</pre>
+            }
+            }
+        </div>
+        <div class="modal-foot">
+            <button class="btn btn-secondary" type="button" (click)="cerrar()">Cerrar</button>
+        </div>
+    </div>
+    }
+</div>
+
+<!-- FORMULARIO: PELÍCULA -->
+<div class="modal-overlay" [class.active]="formPelicula()">
+    @if (formPelicula()) {
+    <div class="modal-content-box" style="max-width: 500px;">
+        <div class="modal-head">
+            <h3 style="font-size: 1.15rem; font-weight: 900;">{{ pId() !== null ? 'Editar Película #' + pId() : 'Nueva
+                Película' }}</h3>
+            <button type="button" class="adm-x" (click)="formPelicula.set(false)" aria-label="Cerrar">&times;</button>
+        </div>
+        <form (submit)="guardarPelicula($event)">
+            <div class="modal-body-area">
+                <div class="form-field-group">
+                    <label class="form-label-bold" for="pTitulo">Título:</label>
+                    <input id="pTitulo" type="text" class="form-input-clean" placeholder="Ej: Gladiador II"
+                        [value]="pTitulo()" (input)="pTitulo.set(val($event))">
+                </div>
+                <div class="form-field-group">
+                    <label class="form-label-bold" for="pGenero">Género:</label>
+                    <input id="pGenero" type="text" class="form-input-clean" placeholder="Ej: Acción / Aventura"
+                        [value]="pGenero()" (input)="pGenero.set(val($event))">
+                </div>
+                <div class="adm-grid">
+                    <div class="form-field-group">
+                        <label class="form-label-bold" for="pDuracion">Duración:</label>
+                        <input id="pDuracion" type="text" class="form-input-clean" placeholder="Ej: 148 min"
+                            [value]="pDuracion()" (input)="pDuracion.set(val($event))">
+                    </div>
+                    <div class="form-field-group">
+                        <label class="form-label-bold" for="pClasif">Clasificación:</label>
+                        <select id="pClasif" class="form-input-clean" (change)="pClasif.set(val($event))">
+                            @for (c of clasificaciones; track c) {
+                            <option [value]="c" [selected]="c === pClasif()">{{ c }}</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-foot">
+                <button type="button" class="btn btn-secondary" (click)="formPelicula.set(false)">Cancelar</button>
+                <button type="submit" class="btn-cta">Guardar Película</button>
+            </div>
+        </form>
+    </div>
+    }
+</div>
+
+<!-- FORMULARIO: FUNCIÓN -->
+<div class="modal-overlay" [class.active]="formFuncion()">
+    @if (formFuncion()) {
+    <div class="modal-content-box" style="max-width: 500px;">
+        <div class="modal-head">
+            <h3 style="font-size: 1.15rem; font-weight: 900;">{{ fId() !== null ? 'Editar Función #' + fId() :
+                'Programar Función' }}</h3>
+            <button type="button" class="adm-x" (click)="formFuncion.set(false)" aria-label="Cerrar">&times;</button>
+        </div>
+        <form (submit)="guardarFuncion($event)">
+            <div class="modal-body-area">
+                <div class="form-field-group">
+                    <label class="form-label-bold" for="fPelicula">Película:</label>
+                    <select id="fPelicula" class="form-input-clean" (change)="fPelicula.set(+val($event))">
+                        @for (p of estado.peliculas(); track p.id) {
+                        <option [value]="p.id" [selected]="+p.id === fPelicula()">{{ p.titulo }} (#{{ p.id }})</option>
+                        }
+                    </select>
+                </div>
+                <div class="adm-grid">
+                    <div class="form-field-group">
+                        <label class="form-label-bold" for="fFecha">Fecha:</label>
+                        <input id="fFecha" type="date" class="form-input-clean" [value]="fFecha()"
+                            (input)="fFecha.set(val($event))">
+                    </div>
+                    <div class="form-field-group">
+                        <label class="form-label-bold" for="fHora">Hora:</label>
+                        <input id="fHora" type="time" class="form-input-clean" [value]="fHora()"
+                            (input)="fHora.set(val($event))">
+                    </div>
+                </div>
+                <div class="form-field-group">
+                    <label class="form-label-bold" for="fSala">Sala:</label>
+                    <input id="fSala" type="text" class="form-input-clean" placeholder="Ej: Sala 1 - IMAX Laser"
+                        [value]="fSala()" (input)="fSala.set(val($event))">
+                </div>
+                <div class="adm-grid">
+                    <div class="form-field-group">
+                        <label class="form-label-bold" for="fPrecio">Precio ($):</label>
+                        <input id="fPrecio" type="number" class="form-input-clean" min="1000" step="500"
+                            [value]="fPrecio()" (input)="fPrecio.set(val($event))">
+                    </div>
+                    <div class="form-field-group">
+                        <label class="form-label-bold" for="fCupos">Cupos Disponibles:</label>
+                        <input id="fCupos" type="number" class="form-input-clean" min="1" max="500" [value]="fCupos()"
+                            (input)="fCupos.set(val($event))">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-foot">
+                <button type="button" class="btn btn-secondary" (click)="formFuncion.set(false)">Cancelar</button>
+                <button type="submit" class="btn-cta">Guardar Función</button>
+            </div>
+        </form>
+    </div>
+    }
+</div>

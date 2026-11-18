@@ -1,4 +1,5 @@
 import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild, computed, output, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 interface HeroMovie {
@@ -52,7 +53,9 @@ const FALLBACK_SECONDS = 65;
 @Component({
   selector: 'app-carousel',
   templateUrl: './carousel.html',
-  styleUrl: './carousel.css'
+  styleUrls: ['./carousel.css'],
+  standalone: true,
+  imports: [CommonModule]
 })
 export class Carousel implements OnInit, OnDestroy {
   /** Se emite con el id de la película cuando se pulsa "Comprar boletos". */

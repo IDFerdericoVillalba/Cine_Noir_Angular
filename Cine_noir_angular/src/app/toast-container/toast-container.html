@@ -1,0 +1,7 @@
+<div class="toast-wrapper">
+  <ng-container *ngFor="let m of messages()">
+    <div class="toast" [ngClass]="m.tipo">
+      {{ m.msg }}
+    </div>
+  </ng-container>
+</div>

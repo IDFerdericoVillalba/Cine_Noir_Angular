@@ -1,9 +1,11 @@
 import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
 
 @Component({
-  imports: [],
   selector: 'app-film-strip',
-  styleUrl: './film-strip.css',
   templateUrl: './film-strip.html',
+  styleUrls: ['./film-strip.css'],
+  standalone: true,
+  imports: [CommonModule]
 })
 export class FilmStrip {}

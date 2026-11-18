@@ -1,0 +1,521 @@
+<section id="taquilla" class="ticketing-section">
+    <div class="container">
+        <div class="section-head-minimal">
+            <div>
+                <span class="section-overline">03 • SISTEMA TRANSACCIONAL EN TIEMPO REAL</span>
+                <h2 class="section-heading-huge">Taquilla Digital &amp; Asientos</h2>
+            </div>
+            <p class="section-lead-text">
+                Selecciona tu función, reserva tus butacas en la sala virtual y registra tu compra directamente en la
+                base de datos.
+            </p>
+        </div>
+
+        <!-- Progreso -->
+        <ol class="tx-stepper" aria-label="Progreso de la compra">
+            <li [class.is-done]="hechos() >= 1" [class.is-active]="hechos() === 0"><span>1</span> Función</li>
+            <li [class.is-done]="hechos() >= 2" [class.is-active]="hechos() === 1"><span>2</span> Butacas</li>
+            <li [class.is-active]="hechos() === 2"><span>3</span> Datos y pago</li>
+        </ol>
+
+        <div class="ticket-flow-wrapper">
+            <div class="checkout-process-col">
+                <!-- PASO 1 -->
+                <div class="panel-card-clean" id="panelStep1">
+                    <h3 class="panel-card-title"><span class="step-indicator-num">1</span> Selecciona Película y Horario
+                    </h3>
+                    <div class="form-field-group">
+                        <label class="form-label-bold" for="selectPeliculaTaquilla">Película:</label>
+                        <select id="selectPeliculaTaquilla" class="form-input-clean" (change)="onPelicula($event)">
+                            <option value="" [selected]="!estado.peliculaId()">-- Elige una película de la cartelera --
+                            </option>
+                            @for (p of estado.peliculas(); track p.id) {
+                            <option [value]="p.id" [selected]="p.id === estado.peliculaId()">{{ p.titulo }} ({{
+                                p.clasificacion }})</option>
+                            }
+                        </select>
+                    </div>
+
+                    @if (estado.pelicula(); as pel) {
+                    <div style="margin-top: 18px;">
+                        <label class="form-label-bold">Funciones y salas programadas:</label>
+                        <div class="tx-shows-grid">
+                            @for (f of funcsPelicula(); track f.id) {
+                            <button type="button" class="tx-show" [class.is-soldout]="f.cupos_disponibles <= 0"
+                                [class.is-selected]="estado.funcionId() === +f.id" [disabled]="f.cupos_disponibles <= 0"
+                                (click)="elegirFuncion(f)">
+                                <span class="tx-show-top">
+                                    <span class="tx-show-hour">{{ f.hora }}</span>
+                                    <span class="tx-show-price">{{ estado.formatCurrency(f.precio) }}</span>
+                                </span>
+                                <span class="tx-show-room">
+                                    <span class="cx-badge is-small"
+                                        [class.is-imax]="estado.salaFormat(f.sala) === 'IMAX'">{{
+                                        estado.salaFormat(f.sala) }}</span>
+                                    {{ f.sala }}
+                                </span>
+                                <span class="tx-show-date">📅 {{ estado.formatFecha(f.fecha) }}</span>
+                                <span class="tx-show-stock"
+                                    [class.is-low]="f.cupos_disponibles > 0 && f.cupos_disponibles <= 10">
+                                    @if (f.cupos_disponibles <= 0) { AGOTADO } @else if (f.cupos_disponibles <=10) {
+                                        ¡Solo quedan {{ f.cupos_disponibles }}! } @else { {{ f.cupos_disponibles }}
+                                        cupos disponibles } </span>
+                            </button>
+                            } @empty {
+                            <div class="tx-alert">
+                                No hay funciones activas para "{{ pel.titulo }}". Crea una desde el menú <strong>Admin
+                                    &amp; BD</strong>.
+                            </div>
+                            }
+                        </div>
+                    </div>
+                    }
+                </div>
+
+                <!-- PASO 2 -->
+                <div class="panel-card-clean" id="panelStep2" [class.disabled]="!estado.funcion()">
+                    <h3 class="panel-card-title"><span class="step-indicator-num">2</span> Elige tus Asientos en Sala
+                    </h3>
+                    <p class="tx-help">Toca las butacas que desees reservar (máximo 8 por compra). Los cupos se
+                        actualizan automáticamente.</p>
+                    <div class="hall-container">
+                        <div class="screen-arch"></div>
+                        <div class="screen-label">P A N T A L L A • L Á S E R</div>
+                        <div class="seats-grid">
+                            @for (r of sala(); track r.fila) {
+                            <div class="seat-row">
+                                <span class="seat-row-label">{{ r.fila }}</span>
+                                <div class="seat-row-seats">
+                                    @for (s of r.sillas; track s.id) {
+                                    @if (s.n === 6) { <span class="seat-aisle"></span> }
+                                    <button type="button" class="seat-item-btn" [class.occupied]="s.ocupada"
+                                        [class.selected]="elegida(s.id)" [disabled]="s.ocupada"
+                                        (click)="toggleSeat(s.id)"
+                                        [title]="'Butaca ' + s.id + (s.ocupada ? ' (ocupada)' : '')"
+                                        [attr.aria-label]="'Butaca ' + s.id + (s.ocupada ? ', ocupada' : '')">{{ s.n
+                                        }}</button>
+                                    }
+                                </div>
+                                <span class="seat-row-label">{{ r.fila }}</span>
+                            </div>
+                            }
+                        </div>
+                        <div class="tx-legend">
+                            <span><i class="lg lg-free"></i> Disponible</span>
+                            <span><i class="lg lg-sel"></i> Tu selección</span>
+                            <span><i class="lg lg-occ"></i> Ocupado</span>
+                        </div>
+                    </div>
+
+                    <div class="seats-selected-bar">
+                        <span class="seats-selected-label">Tus butacas</span>
+                        <div class="seats-chips">
+                            @for (s of estado.asientos(); track s) {
+                            <button type="button" class="seat-chip" [title]="'Quitar butaca ' + s"
+                                (click)="toggleSeat(s)">{{ s }} ✕</button>
+                            } @empty {
+                            <span class="seat-chip-empty">Aún no has elegido butacas</span>
+                            }
+                        </div>
+                        <span class="seats-counter">{{ estado.asientos().length }} / {{ estado.maxAsientos }}</span>
+                    </div>
+                </div>
+
+                <!-- TU PEDIDO -->
+                <div class="panel-card-clean" id="panelOrder">
+                    <h3 class="panel-card-title"><span class="step-indicator-num">✎</span> Tu pedido</h3>
+                    <p class="tx-help">Aquí puedes quitar butacas, cambiar cantidades o eliminar productos antes de
+                        pagar.</p>
+
+                    <div class="order-group">
+                        <div class="order-group-head">
+                            <span>Entradas</span>
+                            <span class="order-group-actions">
+                                <button type="button" (click)="ir('panelStep1')">Cambiar función</button>
+                                @if (estado.asientos().length) {
+                                <button type="button" (click)="vaciarButacas()">Vaciar butacas</button>
+                                }
+                            </span>
+                        </div>
+                        @for (s of estado.asientos(); track s) {
+                        <div class="order-row">
+                            <span class="order-name">🎟️ Butaca <strong>{{ s }}</strong></span>
+                            <span class="order-price">{{ estado.formatCurrency(estado.funcion()?.precio ?? 0) }}</span>
+                            <button type="button" class="order-del" [title]="'Quitar butaca ' + s"
+                                [attr.aria-label]="'Quitar butaca ' + s" (click)="toggleSeat(s)">✕</button>
+                        </div>
+                        } @empty {
+                        <div class="order-empty">
+                            {{ estado.funcion() ? 'No has elegido butacas. Tócalas en la sala virtual.' : 'Elige primero
+                            una función y tus butacas.' }}
+                        </div>
+                        }
+                    </div>
+
+                    <div class="order-group">
+                        <div class="order-group-head">
+                            <span>Alimentos y bebidas</span>
+                            <span class="order-group-actions">
+                                <button type="button" (click)="ir('alimentos')">+ Agregar productos</button>
+                                @if (estado.lineasCarrito().length) {
+                                <button type="button" (click)="estado.vaciarCarrito()">Vaciar</button>
+                                }
+                            </span>
+                        </div>
+                        @for (l of estado.lineasCarrito(); track l.producto.id) {
+                        <div class="order-row">
+                            <span class="order-name">{{ l.producto.emoji }} {{ l.producto.nombre }}</span>
+                            <div class="qty-stepper is-small">
+                                <button type="button" (click)="estado.quitar(l.producto.id)"
+                                    aria-label="Quitar uno">−</button>
+                                <span>{{ l.qty }}</span>
+                                <button type="button" (click)="estado.agregar(l.producto.id)"
+                                    aria-label="Agregar uno">+</button>
+                            </div>
+                            <span class="order-price">{{ estado.formatCurrency(l.subtotal) }}</span>
+                            <button type="button" class="order-del" title="Eliminar producto"
+                                [attr.aria-label]="'Eliminar ' + l.producto.nombre"
+                                (click)="estado.eliminar(l.producto.id)">🗑</button>
+                        </div>
+                        } @empty {
+                        <div class="order-empty">Sin alimentos. ¡Agrega crispetas, bebidas o combos!</div>
+                        }
+                    </div>
+
+                    <div class="order-totals">
+                        <div><span>Entradas</span><span>{{ estado.formatCurrency(estado.totales().entradas) }}</span>
+                        </div>
+                        <div><span>Alimentos</span><span>{{ estado.formatCurrency(estado.totales().alimentos) }}</span>
+                        </div>
+                        <div class="order-total"><span>Total</span><span>{{
+                                estado.formatCurrency(estado.totales().total) }}</span></div>
+                    </div>
+                </div>
+
+                <!-- PASO 3 -->
+                <div class="panel-card-clean" id="panelStep3" [class.disabled]="!estado.funcion()">
+                    <h3 class="panel-card-title"><span class="step-indicator-num">3</span> Datos del Cliente y Pago</h3>
+                    <form (submit)="finalizar($event)" novalidate>
+                        <div class="tx-form-grid">
+                            <div class="form-field-group">
+                                <label class="form-label-bold" for="inputClienteNombre">Nombre completo <span
+                                        class="req">*</span></label>
+                                <input type="text" id="inputClienteNombre" class="form-input-clean"
+                                    placeholder="Ej: Diana Prince" autocomplete="name" [value]="nombre()"
+                                    (input)="nombre.set(val($event))">
+                            </div>
+                            <div class="form-field-group">
+                                <label class="form-label-bold" for="inputClienteEmail">Correo electrónico</label>
+                                <input type="email" id="inputClienteEmail" class="form-input-clean"
+                                    placeholder="tucorreo@ejemplo.com" autocomplete="email" [value]="email()"
+                                    (input)="email.set(val($event))">
+                            </div>
+                            <div class="form-field-group">
+                                <label class="form-label-bold">Boletos reservados</label>
+                                <input type="number" class="form-input-clean tx-readonly"
+                                    [value]="estado.asientos().length" readonly>
+                            </div>
+                            <div class="form-field-group">
+                                <label class="form-label-bold">Precio unitario</label>
+                                <input type="text" class="form-input-clean tx-readonly tx-readonly-red"
+                                    [value]="estado.formatCurrency(estado.funcion()?.precio ?? 0)" readonly>
+                            </div>
+                        </div>
+
+                        <div class="pay-block">
+                            <div class="pay-title">Método de pago</div>
+                            <div class="pay-methods" role="radiogroup" aria-label="Método de pago">
+                                @for (m of metodos; track m.id) {
+                                <button type="button" class="pay-method" role="radio"
+                                    [class.is-selected]="metodo() === m.id" [attr.aria-checked]="metodo() === m.id"
+                                    (click)="elegirMetodo(m.id)">
+                                    <span class="pay-ico" [class]="m.clase ? 'pay-ico ' + m.clase : 'pay-ico'">{{ m.ico
+                                        }}</span>
+                                    <span class="pay-name">{{ m.nombre }}</span>
+                                    <small>{{ m.sub }}</small>
+                                </button>
+                                }
+                            </div>
+
+                            @switch (metodo()) {
+                            @case ('tarjeta') {
+                            <div class="pay-panel">
+                                <div class="form-field-group">
+                                    <label class="form-label-bold" for="payCardNumber">Número de tarjeta</label>
+                                    <div class="pay-input-wrap">
+                                        <input type="text" id="payCardNumber" class="form-input-clean"
+                                            inputmode="numeric" autocomplete="cc-number"
+                                            placeholder="0000 0000 0000 0000" [value]="cardNumber()"
+                                            (input)="onCardNumber($event)">
+                                        <span class="pay-card-brand">{{ marcaActual() }}</span>
+                                    </div>
+                                </div>
+                                <div class="form-field-group">
+                                    <label class="form-label-bold" for="payCardName">Nombre en la tarjeta</label>
+                                    <input type="text" id="payCardName" class="form-input-clean" autocomplete="cc-name"
+                                        placeholder="COMO APARECE EN LA TARJETA" [value]="cardName()"
+                                        (input)="cardName.set(val($event))">
+                                </div>
+                                <div class="tx-form-grid">
+                                    <div class="form-field-group">
+                                        <label class="form-label-bold" for="payCardExpiry">Vence (MM/AA)</label>
+                                        <input type="text" id="payCardExpiry" class="form-input-clean"
+                                            inputmode="numeric" autocomplete="cc-exp" placeholder="MM/AA" maxlength="5"
+                                            [value]="cardExpiry()" (input)="onCardExpiry($event)">
+                                    </div>
+                                    <div class="form-field-group">
+                                        <label class="form-label-bold" for="payCardCvv">CVV</label>
+                                        <input type="password" id="payCardCvv" class="form-input-clean"
+                                            inputmode="numeric" autocomplete="cc-csc" placeholder="•••" maxlength="4"
+                                            [value]="cardCvv()" (input)="soloDigitos($event, 4, cardCvv)">
+                                    </div>
+                                </div>
+                                <p class="pay-hint">Pago de demostración: no se realiza ningún cobro real. Puedes probar
+                                    con <code>4242 4242 4242 4242</code>.</p>
+                            </div>
+                            }
+                            @case ('pse') {
+                            <div class="pay-panel">
+                                <div class="tx-form-grid">
+                                    <div class="form-field-group">
+                                        <label class="form-label-bold" for="payPseBank">Banco</label>
+                                        <select id="payPseBank" class="form-input-clean"
+                                            (change)="pseBank.set(val($event))">
+                                            <option value="" [selected]="!pseBank()">-- Selecciona tu banco --</option>
+                                            @for (b of bancos; track b) {
+                                            <option [value]="b" [selected]="b === pseBank()">{{ b }}</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="form-field-group">
+                                        <label class="form-label-bold" for="payPseDoc">Número de documento</label>
+                                        <input type="text" id="payPseDoc" class="form-input-clean" inputmode="numeric"
+                                            placeholder="Cédula o NIT" [value]="pseDoc()"
+                                            (input)="soloDigitos($event, 12, pseDoc)">
+                                    </div>
+                                </div>
+                                <p class="pay-hint">Serás redirigido al portal de tu banco para autorizar el pago
+                                    (simulado).</p>
+                            </div>
+                            }
+                            @case ('nequi') {
+                            <div class="pay-panel">
+                                <div class="form-field-group">
+                                    <label class="form-label-bold" for="payNequiPhone">Celular registrado en
+                                        Nequi</label>
+                                    <input type="text" id="payNequiPhone" class="form-input-clean" inputmode="tel"
+                                        placeholder="3001234567" [value]="nequiPhone()"
+                                        (input)="soloDigitos($event, 10, nequiPhone)">
+                                </div>
+                                <p class="pay-hint">Recibirás una notificación push en tu app Nequi para aprobar el pago
+                                    (simulado).</p>
+                            </div>
+                            }
+                            @case ('daviplata') {
+                            <div class="pay-panel">
+                                <div class="form-field-group">
+                                    <label class="form-label-bold" for="payDaviPhone">Celular registrado en
+                                        Daviplata</label>
+                                    <input type="text" id="payDaviPhone" class="form-input-clean" inputmode="tel"
+                                        placeholder="3001234567" [value]="daviPhone()"
+                                        (input)="soloDigitos($event, 10, daviPhone)">
+                                </div>
+                                <p class="pay-hint">Aprobarás el pago con tu clave desde la app Daviplata (simulado).
+                                </p>
+                            </div>
+                            }
+                            @case ('efectivo') {
+                            <div class="pay-panel">
+                                <div class="pay-cash">
+                                    <strong>Paga al llegar al cine.</strong>
+                                    Tus butacas quedan reservadas y debes pagar en la taquilla al menos 30 minutos antes
+                                    de la función; de lo contrario se liberan.
+                                </div>
+                            </div>
+                            }
+                            }
+                        </div>
+
+                        <label class="pay-terms">
+                            <input type="checkbox" [checked]="terminos()" (change)="terminos.set(check($event))">
+                            <span>Acepto los términos de compra y la política de cambios y devoluciones.</span>
+                        </label>
+
+                        <button type="submit" class="btn-cta pay-submit" [disabled]="procesando()">
+                            @if (procesando()) {
+                            @if (metodo() === 'efectivo') { Reservando butacas... }
+                            @else { <span class="pay-spinner"></span> Procesando pago... }
+                            } @else {
+                            {{ etiquetaPagar() }}
+                            }
+                        </button>
+                        <div class="pay-secure">🔒 Conexión segura · Tus datos de pago no se almacenan</div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Resumen -->
+            <aside>
+                <div class="ticket-summary-sidebar">
+                    <h4 class="summary-lead-title">Resumen de Compra</h4>
+                    <div class="tx-sum-movie" [class.is-empty]="!estado.pelicula()">
+                        @if (estado.pelicula(); as pel) {
+                        <img [src]="estado.posterDe(pel)" alt="" referrerpolicy="no-referrer"
+                            (error)="estado.posterFallback($event, pel)">
+                        }
+                        <div>
+                            <strong>{{ estado.pelicula()?.titulo ?? '—' }}</strong>
+                            @if (estado.pelicula(); as pel) {
+                            <small>{{ pel.genero }} · {{ pel.duracion }} · {{ pel.clasificacion }}</small>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="summary-item-row"><span>Sala:</span><span>{{ estado.funcion()?.sala ?? '-' }}</span>
+                    </div>
+                    <div class="summary-item-row">
+                        <span>Fecha &amp; Hora:</span>
+                        <span>
+                            @if (estado.funcion(); as f) { {{ estado.formatFecha(f.fecha) }} · {{ f.hora }} } @else { -
+                            }
+                        </span>
+                    </div>
+                    <div class="summary-item-row">
+                        <span>Butacas:</span>
+                        <strong style="color: var(--accent-red);">
+                            {{ estado.asientos().length ? estado.asientos().join(', ') : 'Ninguna' }}
+                        </strong>
+                    </div>
+                    <div class="summary-item-row"><span>Boletos:</span><span>{{ estado.asientos().length }}</span></div>
+                    <div class="summary-item-row"><span>Entradas:</span><span>{{
+                            estado.formatCurrency(estado.totales().entradas) }}</span></div>
+
+                    <div class="tx-sum-food">
+                        @for (l of estado.lineasCarrito(); track l.producto.id) {
+                        <div class="tx-sum-food-line">
+                            <span>{{ l.qty }}× {{ l.producto.nombre }}</span>
+                            <span>{{ estado.formatCurrency(l.subtotal) }}</span>
+                        </div>
+                        } @empty {
+                        <div class="tx-sum-food-empty">Sin alimentos agregados</div>
+                        }
+                    </div>
+
+                    <div class="summary-item-row"><span>Alimentos:</span><span>{{
+                            estado.formatCurrency(estado.totales().alimentos) }}</span></div>
+                    <div class="summary-item-row"><span>Método de pago:</span><strong>{{ payLabel() }}</strong></div>
+
+                    <div class="summary-total-price">
+                        <span>Total a pagar:</span>
+                        <span class="total-cash">{{ estado.totales().total > 0 ?
+                            estado.formatCurrency(estado.totales().total) : '$0' }}</span>
+                    </div>
+
+                    <div class="tx-note">
+                        🔒 <strong>Integridad de datos:</strong> Al confirmar se actualizan automáticamente los
+                        <em>cupos_disponibles</em> en la tabla <em>funciones</em>.
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+</section>
+
+<!-- RECIBO -->
+<div class="modal-overlay" [class.active]="recibo() !== null" (click)="cerrarRecibo()">
+    @if (recibo(); as r) {
+    <div class="modal-content-box"
+        style="max-width: 480px; padding: 0; background: transparent; border: none; box-shadow: none;"
+        (click)="$event.stopPropagation()">
+        <div class="printable-ticket receipt-preview">
+            <div style="text-align: center; border-bottom: 2px solid #111; padding-bottom: 12px; margin-bottom: 16px;">
+                <h2
+                    style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 900; letter-spacing: -0.02em; color: #111;">
+                    CINEMA NOIR</h2>
+                <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.15em; color: #555;">Recibo
+                    de compra</div>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <h3 style="font-size: 1.35rem; font-weight: 900; line-height: 1.2; color: #111;">{{ r.pelicula.titulo }}
+                </h3>
+                <div style="font-size: 0.8rem; color: #555; margin-top: 4px;">
+                    {{ r.pelicula.genero }} • {{ r.pelicula.clasificacion }} • {{ r.pelicula.duracion }}
+                </div>
+            </div>
+            <div
+                style="border-top: 1px dashed #999; border-bottom: 1px dashed #999; padding: 12px 0; margin-bottom: 14px; font-size: 0.85rem; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div>
+                    <div class="rc-label">Cliente</div><strong>{{ r.compra.nombre_cliente }}</strong>
+                </div>
+                <div>
+                    <div class="rc-label">No. Compra</div><strong style="color: var(--accent-red);">#{{ r.compra.id
+                        }}</strong>
+                </div>
+                <div>
+                    <div class="rc-label">Fecha y Hora</div><span>{{ r.funcion.fecha }} • {{ r.funcion.hora }}</span>
+                </div>
+                <div>
+                    <div class="rc-label">Sala</div><strong>{{ r.funcion.sala }}</strong>
+                </div>
+                <div style="grid-column: 1 / -1;">
+                    <div class="rc-label">Butacas</div>
+                    <strong style="color: var(--accent-red);">
+                        {{ r.seats.length ? r.seats.join(', ') : r.compra.cantidad_boletos + ' boleto(s)' }}
+                    </strong>
+                </div>
+            </div>
+
+            <div class="rc-block">
+                <div class="rc-line">
+                    <span>Entradas</span>
+                    <span>{{ r.compra.cantidad_boletos }} × {{ estado.formatCurrency(r.funcion.precio) }} = {{
+                        estado.formatCurrency(r.subEnt) }}</span>
+                </div>
+            </div>
+
+            @if (r.alimentos.length) {
+            <div class="rc-block">
+                <div class="rc-label" style="margin-bottom: 4px;">Alimentos y bebidas</div>
+                @for (a of r.alimentos; track a.id_producto) {
+                <div class="rc-line"><span>{{ a.cantidad }}× {{ a.nombre }}</span><span>{{
+                        estado.formatCurrency(a.subtotal) }}</span></div>
+                }
+                <div class="rc-line rc-sub"><span>Subtotal alimentos</span><span>{{ estado.formatCurrency(r.subAli)
+                        }}</span></div>
+            </div>
+            }
+
+            <div class="rc-block rc-total">
+                <div class="rc-line"><span>TOTAL</span><strong>{{ estado.formatCurrency(r.compra.total_pago) }}</strong>
+                </div>
+                <div class="rc-line"><span>Método de pago</span><strong style="text-align: right;">{{ r.pagoTxt
+                        }}</strong></div>
+            </div>
+
+            <div
+                style="text-align: center; background: #f3f4f6; padding: 12px; border: 1px solid #ddd; margin: 14px 0;">
+                <div
+                    style="height: 35px; width: 100%; background: repeating-linear-gradient(90deg, #000, #000 2px, #fff 2px, #fff 5px, #000 5px, #000 8px);">
+                </div>
+                <span style="font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 2px; color: #111;">{{
+                    codigo(r) }}</span>
+            </div>
+
+            <div class="rc-info">
+                Se imprimirán {{ numEntradas(r) }} entrada{{ numEntradas(r) === 1 ? '' : 's' }} (una por butaca) + 1
+                copia para la taquilla.
+            </div>
+        </div>
+
+        <div class="receipt-actions">
+            <button class="btn-cta" type="button" (click)="imprimir()">
+                <span>🖨️</span> Imprimir {{ numEntradas(r) }} entrada{{ numEntradas(r) === 1 ? '' : 's' }} + copia
+            </button>
+            <button class="btn-cta receipt-alt" type="button" (click)="enviarCopiaAlCine()">
+                <span>✉️</span> Enviar copia al cine
+            </button>
+            <button class="btn btn-secondary receipt-close" type="button" (click)="cerrarRecibo()">Cerrar</button>
+        </div>
+    </div>
+    }
+</div>
