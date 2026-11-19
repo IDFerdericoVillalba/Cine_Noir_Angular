@@ -138,7 +138,7 @@
                             <td class="adm-small-text adm-muted">{{ c.fecha_compra }}</td>
                             <td class="adm-actions">
                                 <button type="button" class="adm-btn" (click)="verTicket(c)">Ver Ticket</button>
-                                <button type="button" class="adm-btn adm-btn-del" (click)="anular(c)">Anular</button>
+                                <button type="button" class="adm-btn" disabled title="La API actual no ofrece un endpoint para anular compras">Anulación no disponible</button>
                             </td>
                         </tr>
                         } @empty {

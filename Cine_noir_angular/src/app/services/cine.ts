@@ -6,11 +6,64 @@ import {
   FuncionConPelicula, CompraDetallada, Metricas
 } from '../models/types';
 
+/** Formas JSON que realmente expone Spring Boot (records Java -> camelCase). */
+interface ApiFuncion {
+  id: number;
+  idPelicula: number;
+  fecha: string;
+  hora: string;
+  sala: string;
+  precio: number;
+  cuposDisponibles: number;
+}
+interface ApiCompra {
+  id: number;
+  idFuncion: number;
+  nombreCliente: string;
+  cantidadBoletos: number;
+  totalPago: number;
+  fechaCompra: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class CineService {
-  private http = inject(HttpClient);
-  // Spring Boot corre por defecto en 8080. Ajusta si tu prefijo es otro.
-  private baseUrl = 'http://localhost:8080/api';
+  private readonly http = inject(HttpClient);
+  private readonly baseUrl = 'http://localhost:8080/api';
+
+  // El resto de la interfaz usa snake_case; traducimos aquí en el borde HTTP.
+  private funcionDesdeApi(f: ApiFuncion): Funcion {
+    return {
+      id: Number(f.id),
+      id_pelicula: Number(f.idPelicula),
+      fecha: f.fecha,
+      hora: f.hora,
+      sala: f.sala,
+      precio: Number(f.precio),
+      cupos_disponibles: Number(f.cuposDisponibles)
+    };
+  }
+
+  private compraDesdeApi(c: ApiCompra): Compra {
+    return {
+      id: Number(c.id),
+      id_funcion: Number(c.idFuncion),
+      nombre_cliente: c.nombreCliente,
+      cantidad_boletos: Number(c.cantidadBoletos),
+      total_pago: Number(c.totalPago),
+      fecha_compra: c.fechaCompra
+    };
+  }
+
+  private funcionHaciaApi(f: Omit<Funcion, 'id'>): Omit<ApiFuncion, 'id'> {
+    return {
+      idPelicula: Number(f.id_pelicula),
+      fecha: f.fecha,
+      hora: f.hora,
+      sala: f.sala,
+      precio: Number(f.precio),
+      cuposDisponibles: Number(f.cupos_disponibles)
+    };
+  }
 
   // ---------- PELÍCULAS ----------
   getPeliculas(): Observable<Pelicula[]> {
@@ -25,38 +78,54 @@ export class CineService {
   updatePelicula(id: number, data: Omit<Pelicula, 'id'>): Observable<Pelicula> {
     return this.http.put<Pelicula>(`${this.baseUrl}/peliculas/${id}`, data);
   }
-  deletePelicula(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/peliculas/${id}`);
+  deletePelicula(id: number): Observable<string> {
+    // Spring responde texto plano en este endpoint.
+    return this.http.delete(`${this.baseUrl}/peliculas/${id}`, { responseType: 'text' });
   }
 
   // ---------- FUNCIONES ----------
   getFunciones(): Observable<Funcion[]> {
-    return this.http.get<Funcion[]>(`${this.baseUrl}/funciones`);
+    return this.http.get<ApiFuncion[]>(`${this.baseUrl}/funciones`).pipe(
+      map(items => items.map(f => this.funcionDesdeApi(f)))
+    );
   }
   getFuncion(id: number): Observable<Funcion> {
-    return this.http.get<Funcion>(`${this.baseUrl}/funciones/${id}`);
+    return this.http.get<ApiFuncion>(`${this.baseUrl}/funciones/${id}`).pipe(
+      map(f => this.funcionDesdeApi(f))
+    );
   }
   createFuncion(data: Omit<Funcion, 'id'>): Observable<Funcion> {
-    return this.http.post<Funcion>(`${this.baseUrl}/funciones`, data);
+    return this.http.post<ApiFuncion>(`${this.baseUrl}/funciones`, this.funcionHaciaApi(data)).pipe(
+      map(f => this.funcionDesdeApi(f))
+    );
   }
   updateFuncion(id: number, data: Omit<Funcion, 'id'>): Observable<Funcion> {
-    return this.http.put<Funcion>(`${this.baseUrl}/funciones/${id}`, data);
+    return this.http.put<ApiFuncion>(`${this.baseUrl}/funciones/${id}`, this.funcionHaciaApi(data)).pipe(
+      map(f => this.funcionDesdeApi(f))
+    );
   }
-  deleteFuncion(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/funciones/${id}`);
+  deleteFuncion(id: number): Observable<string> {
+    // Spring responde texto plano en este endpoint.
+    return this.http.delete(`${this.baseUrl}/funciones/${id}`, { responseType: 'text' });
   }
 
   // ---------- COMPRAS ----------
   getCompras(): Observable<Compra[]> {
-    return this.http.get<Compra[]>(`${this.baseUrl}/compras`);
+    return this.http.get<ApiCompra[]>(`${this.baseUrl}/compras`).pipe(
+      map(items => items.map(c => this.compraDesdeApi(c)))
+    );
   }
   registrarCompra(data: Omit<Compra, 'id' | 'fecha_compra'>): Observable<Compra> {
-    return this.http.post<Compra>(`${this.baseUrl}/compras`, data);
+    // El endpoint actual solo acepta estos tres campos. El servidor calcula el total.
+    const request = {
+      idFuncion: Number(data.id_funcion),
+      nombreCliente: data.nombre_cliente,
+      cantidadBoletos: Number(data.cantidad_boletos)
+    };
+    return this.http.post<ApiCompra>(`${this.baseUrl}/compras`, request).pipe(
+      map(c => this.compraDesdeApi(c))
+    );
   }
-  anularCompra(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/compras/${id}`);
-  }
-
   // ---------- ENRIQUECIDOS (JOIN) ----------
   getFuncionesConPelicula(): Observable<FuncionConPelicula[]> {
     return forkJoin([this.getFunciones(), this.getPeliculas()]).pipe(

@@ -75,6 +75,7 @@ export class Admin {
     if (err instanceof HttpErrorResponse) {
       const cuerpo = err.error;
       if (typeof cuerpo === 'string' && cuerpo) return cuerpo;
+      if (cuerpo && typeof cuerpo.mensaje === 'string') return cuerpo.mensaje;
       if (cuerpo && typeof cuerpo.message === 'string') return cuerpo.message;
       return `${err.status} ${err.statusText || 'Error de red'}`;
     }
@@ -242,18 +243,6 @@ export class Admin {
       return;
     }
     this.panel.recibo.set(r);
-  }
-
-  async anular(c: CompraDetallada): Promise<void> {
-    if (!confirm(`¿Anular la compra #${c.id} y restaurar los cupos?`)) return;
-    try {
-      await firstValueFrom(this.cine.anularCompra(Number(c.id)));
-      this.toast.mostrar(`Compra #${c.id} anulada.`, 'info');
-      await this.cargarCompras();
-      await this.panel.recargar();
-    } catch (err) {
-      this.toast.mostrar('Error: ' + this.msg(err), 'error');
-    }
   }
 
   // ==================== SQL ====================

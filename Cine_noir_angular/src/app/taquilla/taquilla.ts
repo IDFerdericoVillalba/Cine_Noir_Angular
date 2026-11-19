@@ -1,5 +1,6 @@
 import { Component, HostListener, WritableSignal, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { CineService } from '../services/cine';
 import { Estado } from '../services/estado';
@@ -257,6 +258,13 @@ export class Taquilla {
     const cliente = this.nombre().trim();
     if (!cliente) { this.toast.mostrar('Ingresa el nombre del cliente.', 'error'); return; }
     if (seats.length === 0) { this.toast.mostrar('Debes seleccionar al menos 1 butaca en la sala virtual.', 'error'); return; }
+    if (this.estado.totales().alimentos > 0) {
+      this.toast.mostrar(
+        'La API actual solo guarda boletos. Vacía el carrito de alimentos para continuar; esos productos todavía no se guardan ni se cobran.',
+        'error'
+      );
+      return;
+    }
 
     const errorPago = this.validarPago();
     if (errorPago) { this.toast.mostrar(errorPago, 'error'); return; }
@@ -291,7 +299,18 @@ export class Taquilla {
     try {
       if (!efectivo) await new Promise(r => setTimeout(r, 1400));
       const resp = await firstValueFrom(this.cine.registrarCompra(datos));
-      const compra: Compra = { ...resp, ...datos, id: resp.id, fecha_compra: resp.fecha_compra };
+      // El servidor decide los campos persistidos y el total definitivo.
+      const compra: Compra = {
+        ...datos,
+        ...resp,
+        email_cliente: datos.email_cliente,
+        asientos_seleccionados: seats,
+        alimentos,
+        subtotal_entradas: t.entradas,
+        subtotal_alimentos: t.alimentos,
+        metodo_pago: pagoTxt,
+        estado_pago: efectivo ? 'Pendiente (pago en taquilla)' : 'Pagado'
+      };
       this.toast.mostrar(
         efectivo
           ? `Reserva #${compra.id} creada. Paga en taquilla antes de la función.`
@@ -303,7 +322,10 @@ export class Taquilla {
       this.reiniciarFormulario();
       await this.estado.recargarFunciones();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const cuerpo = err instanceof HttpErrorResponse ? err.error : null;
+      const msg = cuerpo && typeof cuerpo.mensaje === 'string'
+        ? cuerpo.mensaje
+        : err instanceof Error ? err.message : String(err);
       this.toast.mostrar('Error en la transacción: ' + msg, 'error');
     } finally {
       this.procesando.set(false);

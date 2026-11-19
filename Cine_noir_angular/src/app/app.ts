@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Header } from './header/header';
 import { Carousel } from './carousel/carousel';
@@ -32,6 +32,9 @@ import { AdminEstado } from './services/admin';
     ToastContainer
   ],
   styleUrls: ['./app.css'],
+  // app.css contiene estilos compartidos por los componentes hijos de la página.
+  // Al dejarlos encapsulados, esas reglas no alcanzan el HTML interno de los hijos.
+  encapsulation: ViewEncapsulation.None,
   templateUrl: './app.html',
 })
 export class App implements OnInit {

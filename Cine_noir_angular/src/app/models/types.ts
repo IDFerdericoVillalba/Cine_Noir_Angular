@@ -70,13 +70,3 @@ export interface Recibo {
     subAli: number;
     pagoTxt: string;
 }
-export interface Recibo {
-    compra: Compra;
-    funcion: Funcion;
-    pelicula: Pelicula;
-    seats: string[];
-    alimentos: AlimentoCompra[];
-    subEnt: number;
-    subAli: number;
-    pagoTxt: string;
-}
